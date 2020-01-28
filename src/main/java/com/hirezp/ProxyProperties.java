@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "proxy")
 public class ProxyProperties {
 
-	private String user;
-	private String password;
-	private String host;
-	private Integer port;
+	private String user = "toppontoweb";
+	private String password = "TpW@T04";
+	private String host = "10.0.0.5";
+	private Integer port = 8080;
 	private Boolean habilitado = false;
 
 	public String getUser() {

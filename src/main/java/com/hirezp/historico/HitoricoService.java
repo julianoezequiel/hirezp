@@ -2,6 +2,10 @@ package com.hirezp.historico;
 
 import java.lang.reflect.Array;
 import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,14 +17,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.ssl.TrustStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -173,7 +182,7 @@ public class HitoricoService {
 		try {
 
 			RestTemplate restTemplateAuth = restTemplate();
-
+//			SSLUtil.turnOffSslChecking();
 			ResponseEntity<RetornoHistorico> response = restTemplateAuth.exchange(
 					URI.create("https://api.paladins.guru/v3/profiles/" + id + "/matches?page=" + cursor),
 					HttpMethod.GET, null, RetornoHistorico.class);
@@ -188,6 +197,7 @@ public class HitoricoService {
 				consultarExterno(id, body.getMatches().getCursor().getCurrent() + 1);
 			}
 		} catch (Exception e) {
+			System.out.println(e);
 		}
 
 	}
@@ -218,7 +228,27 @@ public class HitoricoService {
 	public RestTemplate restTemplate() {
 
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		
+		TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
 
+		SSLContext sslContext = null;
+		try {
+			sslContext = org.apache.http.ssl.SSLContexts.custom()
+			        .loadTrustMaterial(null, acceptingTrustStrategy)
+			        .build();
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext);
+
+		CloseableHttpClient httpClient = HttpClients.custom()
+		        .setSSLSocketFactory(csf)
+		        .build();
+
+		factory.setHttpClient(httpClient);
+		
 		if (proxyProperties.getHabilitado()) {
 			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
