@@ -3,9 +3,7 @@ package com.hirezp.historico;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.data.mongodb.core.mapping.Document;
-
-@Document
+//@Document
 public class Data {
 
 	private String _id;
